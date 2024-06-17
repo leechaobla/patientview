@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Clinic Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyApD5l3_sViWM2BWV8ZNHyJVzHJ86602o0"></script>
+    <script>
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: {lat: 37.7749, lng: -122.4194}  // Default center (San Francisco)
+        });
+
+        var clinics = [
+          {name: 'Central Health Clinic', lat: 37.7749, lng: -122.4194},
+          {name: 'Eastside Medical Center', lat: 37.7849, lng: -122.4094},
+          {name: 'Westside Health Services', lat: 37.7649, lng: -122.4294},
+          {name: 'Northside Wellness Clinic', lat: 37.7549, lng: -122.4394},
+          {name: 'Southside Family Health', lat: 37.7449, lng: -122.4494}
+        ];
+
+        for (var i = 0; i < clinics.length; i++) {
+          var clinic = clinics[i];
+          var marker = new google.maps.Marker({
+            position: {lat: clinic.lat, lng: clinic.lng},
+            map: map,
+            title: clinic.name
+          });
+        }
+      }
+    </script>
+  </head>
+  <body onload="initMap()">
+    <div id="map" style="height: 100%; width: 100%;"></div>
+  </body>
+</html>
