@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 import pymysql
+from appointmentdialog import AppointmentDialog
 
 
 class Ui_mainWindow(object):
@@ -49,15 +50,16 @@ class Ui_mainWindow(object):
         self.retranslateUi(mainWindow)
         QtCore.QMetaObject.connectSlotsByName(mainWindow)
 
-        # Connect the button to a function
+
         self.pushButton.clicked.connect(self.request_doctor)
 
-        # Populate the clinic list
+
         self.populate_clinic_list()
 
-        # Load the map HTML file
+
         file_path = "file:///C:/Users/Terrence/AppData/Local/Programs/Python/Python312/Lib/site-packages/QtDesigner/Project/index.html"
         self.webEngineView.setUrl(QtCore.QUrl(file_path))
+
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
         mainWindow.setWindowTitle(_translate("mainWindow", "Call a Doctor"))
@@ -74,23 +76,23 @@ class Ui_mainWindow(object):
     def populate_clinic_list(self):
         # Database connection parameters
         db_config = {
-            'host': '127.0.0.1',  # Your database host
-            'user': 'root',  # Your database username
-            'password': '10013lool',  # Your database password
-            'database': 'appointmentmanagement',  # Your database name
+            'host': '127.0.0.1',
+            'user': 'root',
+            'password': '10013lool',
+            'database': 'appointmentmanagement',
             'charset': 'utf8mb4'
         }
 
         try:
-            # Connect to the database
+
             connection = pymysql.connect(**db_config)
             cursor = connection.cursor()
 
-            # Execute the query
+
             cursor.execute("SELECT clinic_name FROM clinics")
             clinics = cursor.fetchall()
 
-            # Populate the list widget
+
             for clinic in clinics:
                 self.listWidget.addItem(clinic[0])
 
@@ -98,7 +100,7 @@ class Ui_mainWindow(object):
             QtWidgets.QMessageBox.critical(None, "Database Error", str(e))
 
         finally:
-            # Close the database connection
+
             if connection:
                 connection.close()
 
@@ -106,14 +108,16 @@ class Ui_mainWindow(object):
         selected_clinic = self.listWidget.currentItem()
         if selected_clinic:
             clinic_name = selected_clinic.text()
-            QtWidgets.QMessageBox.information(None, "Doctor Requested", f"Doctor has been requested to {clinic_name}.")
+            dialog = AppointmentDialog(clinic_name, self.centralwidget)
+            if dialog.exec_() == QtWidgets.QDialog.Accepted:
+
+                pass
         else:
             QtWidgets.QMessageBox.warning(None, "No Clinic Selected", "Please select a clinic from the list.")
 
 
 if __name__ == "__main__":
     import sys
-
     app = QtWidgets.QApplication(sys.argv)
     mainWindow = QtWidgets.QMainWindow()
     ui = Ui_mainWindow()
