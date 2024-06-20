@@ -74,7 +74,7 @@ class Ui_mainWindow(object):
                                       "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; font-weight:600; text-decoration: underline;\">Call a Doctor</span></p></body></html>"))
 
     def populate_clinic_list(self):
-        # Database connection parameters
+
         db_config = {
             'host': '127.0.0.1',
             'user': 'root',
@@ -110,10 +110,10 @@ class Ui_mainWindow(object):
             clinic_name = selected_clinic.text()
             dialog = AppointmentDialog(clinic_name, self.centralwidget)
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
-
                 pass
         else:
             QtWidgets.QMessageBox.warning(None, "No Clinic Selected", "Please select a clinic from the list.")
+
 
 
 if __name__ == "__main__":

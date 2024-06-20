@@ -1,16 +1,14 @@
-# -*- coding: utf-8 -*-
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtWidgets, QtCore
 import pymysql
-
 
 class AppointmentDialog(QtWidgets.QDialog):
     def __init__(self, clinic_name, parent=None):
         super(AppointmentDialog, self).__init__(parent)
         self.setWindowTitle(f"Request Doctor at {clinic_name}")
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 400, 400)
         self.clinic_name = clinic_name
 
-        # Layout and widgets
+
         layout = QtWidgets.QVBoxLayout()
 
         self.label_doctor = QtWidgets.QLabel("Select Doctor:")
@@ -19,11 +17,26 @@ class AppointmentDialog(QtWidgets.QDialog):
         self.combo_doctors = QtWidgets.QComboBox()
         layout.addWidget(self.combo_doctors)
 
-        self.label_details = QtWidgets.QLabel("Enter Appointment Details:")
-        layout.addWidget(self.label_details)
+        self.label_illness = QtWidgets.QLabel("Enter Illness:")
+        layout.addWidget(self.label_illness)
 
-        self.text_details = QtWidgets.QTextEdit()
-        layout.addWidget(self.text_details)
+        self.text_illness = QtWidgets.QLineEdit()
+        layout.addWidget(self.text_illness)
+
+        self.label_date = QtWidgets.QLabel("Select Appointment Date:")
+        layout.addWidget(self.label_date)
+
+        self.date_edit = QtWidgets.QDateEdit()
+        self.date_edit.setCalendarPopup(True)
+        self.date_edit.setDate(QtCore.QDate.currentDate())
+        layout.addWidget(self.date_edit)
+
+        self.label_time = QtWidgets.QLabel("Select Appointment Time:")
+        layout.addWidget(self.label_time)
+
+        self.time_edit = QtWidgets.QTimeEdit()
+        self.time_edit.setTime(QtCore.QTime.currentTime())
+        layout.addWidget(self.time_edit)
 
         self.button_submit = QtWidgets.QPushButton("Submit Request")
         self.button_submit.clicked.connect(self.submit_request)
@@ -35,43 +48,84 @@ class AppointmentDialog(QtWidgets.QDialog):
         self.populate_doctors()
 
     def populate_doctors(self):
-
         db_config = {
             'host': '127.0.0.1',
             'user': 'root',
             'password': '10013lool',
-            'database': 'doctorslist',
+            'database': 'appointmentmanagement',
             'charset': 'utf8mb4'
         }
 
         try:
-
             connection = pymysql.connect(**db_config)
             cursor = connection.cursor()
 
 
-            cursor.execute("SELECT doctor_name FROM doctors")
+            query = """
+            SELECT doctor_name, doctor_ID FROM doctors 
+            WHERE doctor_status = 'Free' AND clinic_ID = (
+                SELECT clinic_ID FROM clinics WHERE clinic_name = %s
+            )
+            """
+            cursor.execute(query, (self.clinic_name,))
             doctors = cursor.fetchall()
 
-
             for doctor in doctors:
-                self.combo_doctors.addItem(doctor[0])
+                self.combo_doctors.addItem(doctor[0], doctor[1])
 
         except pymysql.MySQLError as e:
             QtWidgets.QMessageBox.critical(None, "Database Error", str(e))
 
         finally:
-
             if connection:
                 connection.close()
 
     def submit_request(self):
         doctor = self.combo_doctors.currentText()
-        details = self.text_details.toPlainText()
-        if doctor and details:
-            QtWidgets.QMessageBox.information(self, "Request Submitted",
-                                              f"Doctor {doctor} has been requested at {self.clinic_name}.\nDetails: {details}")
-            self.accept()
+        doctor_id = self.combo_doctors.currentData()
+        illness = self.text_illness.text()
+        appointment_date = self.date_edit.date().toString(QtCore.Qt.ISODate)
+        appointment_time = self.time_edit.time().toString(QtCore.Qt.ISODate)
+
+        if doctor and illness and appointment_date and appointment_time:
+            db_config = {
+                'host': '127.0.0.1',
+                'user': 'root',
+                'password': '10013lool',
+                'database': 'appointmentmanagement',
+                'charset': 'utf8mb4'
+            }
+
+            try:
+                connection = pymysql.connect(**db_config)
+                cursor = connection.cursor()
+
+
+                cursor.execute("SELECT clinic_ID FROM clinics WHERE clinic_name = %s", (self.clinic_name,))
+                clinic_id = cursor.fetchone()[0]
+
+
+                query = """
+                INSERT INTO appointments (doctor_ID, clinic_ID, illness, appointment_date, appointment_time) 
+                VALUES (%s, %s, %s, %s, %s)
+                """
+                cursor.execute(query, (doctor_id, clinic_id, illness, appointment_date, appointment_time))
+                connection.commit()
+
+                QtWidgets.QMessageBox.information(self, "Request Submitted",
+                                                  f"Doctor {doctor} has been requested at {self.clinic_name}.\n"
+                                                  f"Illness: {illness}\n"
+                                                  f"Date: {appointment_date}\n"
+                                                  f"Time: {appointment_time}")
+                self.accept()
+
+            except pymysql.MySQLError as e:
+                QtWidgets.QMessageBox.critical(None, "Database Error", str(e))
+
+            finally:
+                if connection:
+                    connection.close()
+
         else:
             QtWidgets.QMessageBox.warning(self, "Incomplete Data",
-                                          "Please select a doctor and enter the appointment details.")
+                                          "Please fill in all the details.")
