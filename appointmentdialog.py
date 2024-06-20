@@ -50,8 +50,8 @@ class AppointmentDialog(QtWidgets.QDialog):
     def populate_doctors(self):
         db_config = {
             'host': '127.0.0.1',
-            'user': 'root',
-            'password': '10013lool',
+            'user': 'terry',
+            'password': '',
             'database': 'appointmentmanagement',
             'charset': 'utf8mb4'
         }
@@ -90,8 +90,8 @@ class AppointmentDialog(QtWidgets.QDialog):
         if doctor and illness and appointment_date and appointment_time:
             db_config = {
                 'host': '127.0.0.1',
-                'user': 'root',
-                'password': '10013lool',
+                'user': 'terry',
+                'password': '',
                 'database': 'appointmentmanagement',
                 'charset': 'utf8mb4'
             }

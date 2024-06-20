@@ -77,8 +77,8 @@ class Ui_mainWindow(object):
 
         db_config = {
             'host': '127.0.0.1',
-            'user': 'root',
-            'password': '10013lool',
+            'user': 'terry',
+            'password': '',
             'database': 'appointmentmanagement',
             'charset': 'utf8mb4'
         }
