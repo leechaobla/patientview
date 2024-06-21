@@ -8,7 +8,6 @@ class AppointmentDialog(QtWidgets.QDialog):
         self.setGeometry(100, 100, 400, 400)
         self.clinic_name = clinic_name
 
-
         layout = QtWidgets.QVBoxLayout()
 
         self.label_doctor = QtWidgets.QLabel("Select Doctor:")
@@ -29,6 +28,7 @@ class AppointmentDialog(QtWidgets.QDialog):
         self.date_edit = QtWidgets.QDateEdit()
         self.date_edit.setCalendarPopup(True)
         self.date_edit.setDate(QtCore.QDate.currentDate())
+        self.date_edit.setMinimumDate(QtCore.QDate.currentDate())
         layout.addWidget(self.date_edit)
 
         self.label_time = QtWidgets.QLabel("Select Appointment Time:")
@@ -44,7 +44,6 @@ class AppointmentDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-
         self.populate_doctors()
 
     def populate_doctors(self):
@@ -59,7 +58,6 @@ class AppointmentDialog(QtWidgets.QDialog):
         try:
             connection = pymysql.connect(**db_config)
             cursor = connection.cursor()
-
 
             query = """
             SELECT doctor_name, doctor_ID FROM doctors 
@@ -100,10 +98,8 @@ class AppointmentDialog(QtWidgets.QDialog):
                 connection = pymysql.connect(**db_config)
                 cursor = connection.cursor()
 
-
                 cursor.execute("SELECT clinic_ID FROM clinics WHERE clinic_name = %s", (self.clinic_name,))
                 clinic_id = cursor.fetchone()[0]
-
 
                 query = """
                 INSERT INTO appointments (doctor_ID, clinic_ID, illness, appointment_date, appointment_time) 
