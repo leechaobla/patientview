@@ -1,5 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 import pymysql
+from PyQt5.QtWidgets import QMessageBox
+
 
 class AppointmentDialog(QtWidgets.QDialog):
     def __init__(self, clinic_name, parent=None):
@@ -67,6 +69,7 @@ class AppointmentDialog(QtWidgets.QDialog):
             cursor.execute(query, (self.clinic_name,))
             doctors = cursor.fetchall()
 
+            self.combo_doctors.clear()
             for doctor in doctors:
                 self.combo_doctors.addItem(doctor[0], doctor[1])
 
@@ -84,12 +87,16 @@ class AppointmentDialog(QtWidgets.QDialog):
         appointment_date = self.date_edit.date()
         appointment_time = self.time_edit.time()
 
-        current_date = QtCore.QDate.currentDate()
-        current_time = QtCore.QTime.currentTime()
+        current_datetime = QtCore.QDateTime.currentDateTime()
+        selected_datetime = QtCore.QDateTime(appointment_date, appointment_time)
 
-        if appointment_date < current_date or (appointment_date == current_date and appointment_time < current_time):
+        if not illness or self.combo_doctors.currentIndex() == -1:
+            QMessageBox.warning(self, "Incomplete Data", "Please fill in all the details.")
+            return
+
+        if selected_datetime <= current_datetime:
             QtWidgets.QMessageBox.warning(self, "Invalid Date/Time",
-                                          "The appointment date and time cannot be in the past. Please select a valid date and time.")
+                                          "The appointment date and time cannot be in the past or present. Please select a future time.")
             return
 
         if doctor and illness and appointment_date and appointment_time:
@@ -112,7 +119,8 @@ class AppointmentDialog(QtWidgets.QDialog):
                 INSERT INTO appointments (doctor_ID, clinic_ID, illness, appointment_date, appointment_time) 
                 VALUES (%s, %s, %s, %s, %s)
                 """
-                cursor.execute(query, (doctor_id, clinic_id, illness, appointment_date.toString(QtCore.Qt.ISODate), appointment_time.toString(QtCore.Qt.ISODate)))
+                cursor.execute(query, (doctor_id, clinic_id, illness, appointment_date.toString(QtCore.Qt.ISODate),
+                                       appointment_time.toString(QtCore.Qt.ISODate)))
                 connection.commit()
 
                 QtWidgets.QMessageBox.information(self, "Request Submitted",

@@ -1,12 +1,21 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-import pymysql
 from appointmentdialog import AppointmentDialog
 import os
 from viewrequests import ViewRequestsWidget
+from databasehandler import DatabaseHandler
 
 
 class Ui_mainWindow(object):
+    def __init__(self):
+     self.db_handler = DatabaseHandler({
+        'host': '127.0.0.1',
+        'user': 'root',
+        'password': '',
+        'database': 'appointmentmanagement',
+        'charset': 'utf8mb4'
+     })
+     self.db_handler.connect()
     def setupUi(self, mainWindow):
         mainWindow.setObjectName("mainWindow")
         mainWindow.resize(537, 868)
@@ -106,27 +115,16 @@ class Ui_mainWindow(object):
         self.stacked_widget.setCurrentWidget(self.main_page)
 
     def populate_clinic_list(self):
-        db_config = {
-            'host': '127.0.0.1',
-            'user': 'root',
-            'password': '',
-            'database': 'appointmentmanagement',
-            'charset': 'utf8mb4'
-        }
-
-        try:
-            connection = pymysql.connect(**db_config)
-            cursor = connection.cursor()
-            cursor.execute("SELECT clinic_name FROM clinics")
-            clinics = cursor.fetchall()
+        clinics = self.db_handler.execute_query("SELECT clinic_name FROM clinics")
+        self.listWidget.clear()
+        if clinics:
             for clinic in clinics:
                 self.listWidget.addItem(clinic[0])
             self.listWidget.clearSelection()
-        except pymysql.MySQLError as e:
-            QtWidgets.QMessageBox.critical(None, "Database Error", str(e))
-        finally:
-            if connection:
-                connection.close()
+        else:
+            QtWidgets.QMessageBox.critical(None, "Database Error", "Failed to retrieve clinic list.")
+
+        self.listWidget.clearSelection()
 
     def request_doctor(self):
         selected_clinic = self.listWidget.currentItem()
