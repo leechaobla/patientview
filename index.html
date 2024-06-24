@@ -1,35 +1,102 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Clinic Map</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClPsSvLnj8tyDy-SOPMjKQKwHrZBv1JVI"></script>
+<head>
+    <title>Interactive Google Map</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCebwvAm-AjNHTfKDX33W3uYVwsgoqQC_Q&libraries=places"></script>
     <script>
-      function initMap() {
-        var map = new google.maps.Map(document.getElementById('map'), {
-          zoom: 12,
-          center: {lat: 37.7749, lng: -122.4194}  // Default center (San Francisco)
-        });
+        function initMap() {
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: {lat: 37.7749, lng: -122.4194},
+                zoom: 12,
+                mapTypeControl: true,
+                zoomControl: true,
+                streetViewControl: true
+            });
 
-        var clinics = [
-          {name: 'Central Health Clinic', lat: 37.7749, lng: -122.4194},
-          {name: 'Eastside Medical Center', lat: 37.7849, lng: -122.4094},
-          {name: 'Westside Health Services', lat: 37.7649, lng: -122.4294},
-          {name: 'Northside Wellness Clinic', lat: 37.7549, lng: -122.4394},
-          {name: 'Southside Family Health', lat: 37.7449, lng: -122.4494}
-        ];
+            var input = document.getElementById('search-input');
+            var searchBox = new google.maps.places.SearchBox(input);
 
-        for (var i = 0; i < clinics.length; i++) {
-          var clinic = clinics[i];
-          var marker = new google.maps.Marker({
-            position: {lat: clinic.lat, lng: clinic.lng},
-            map: map,
-            title: clinic.name
-          });
+            map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+
+            map.addListener('bounds_changed', function() {
+                searchBox.setBounds(map.getBounds());
+            });
+
+            var markers = [];
+
+            searchBox.addListener('places_changed', function() {
+                var places = searchBox.getPlaces();
+
+                if (places.length == 0) {
+                    return;
+                }
+
+                markers.forEach(function(marker) {
+                    marker.setMap(null);
+                });
+                markers = [];
+
+                var bounds = new google.maps.LatLngBounds();
+                places.forEach(function(place) {
+                    if (!place.geometry) {
+                        console.log("Returned place contains no geometry");
+                        return;
+                    }
+                    var icon = {
+                        url: place.icon,
+                        size: new google.maps.Size(71, 71),
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(17, 34),
+                        scaledSize: new google.maps.Size(25, 25)
+                    };
+
+                    markers.push(new google.maps.Marker({
+                        map: map,
+                        icon: icon,
+                        title: place.name,
+                        position: place.geometry.location
+                    }));
+
+                    if (place.geometry.viewport) {
+                        bounds.union(place.geometry.viewport);
+                    } else {
+                        bounds.extend(place.geometry.location);
+                    }
+                });
+                map.fitBounds(bounds);
+            });
         }
-      }
     </script>
-  </head>
-  <body onload="initMap()">
-    <div id="map" style="height: 100%; width: 100%;"></div>
-  </body>
+    <style>
+        #map {
+            height: 100%;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #search-input {
+            box-sizing: border-box;
+            border: 1px solid transparent;
+            width: 240px;
+            height: 32px;
+            margin-top: 10px;
+            padding: 0 12px;
+            border-radius: 3px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            font-size: 14px;
+            outline: none;
+            text-overflow: ellipsis;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body onload="initMap()">
+    <input id="search-input" class="controls" type="text" placeholder="Search for clinics...">
+    <div id="map"></div>
+</body>
 </html>

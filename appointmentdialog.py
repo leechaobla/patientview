@@ -8,7 +8,6 @@ class AppointmentDialog(QtWidgets.QDialog):
         self.setGeometry(100, 100, 400, 400)
         self.clinic_name = clinic_name
 
-
         layout = QtWidgets.QVBoxLayout()
 
         self.label_doctor = QtWidgets.QLabel("Select Doctor:")
@@ -44,7 +43,6 @@ class AppointmentDialog(QtWidgets.QDialog):
 
         self.setLayout(layout)
 
-
         self.populate_doctors()
 
     def populate_doctors(self):
@@ -59,7 +57,6 @@ class AppointmentDialog(QtWidgets.QDialog):
         try:
             connection = pymysql.connect(**db_config)
             cursor = connection.cursor()
-
 
             query = """
             SELECT doctor_name, doctor_ID FROM doctors 
@@ -84,8 +81,16 @@ class AppointmentDialog(QtWidgets.QDialog):
         doctor = self.combo_doctors.currentText()
         doctor_id = self.combo_doctors.currentData()
         illness = self.text_illness.text()
-        appointment_date = self.date_edit.date().toString(QtCore.Qt.ISODate)
-        appointment_time = self.time_edit.time().toString(QtCore.Qt.ISODate)
+        appointment_date = self.date_edit.date()
+        appointment_time = self.time_edit.time()
+
+        current_date = QtCore.QDate.currentDate()
+        current_time = QtCore.QTime.currentTime()
+
+        if appointment_date < current_date or (appointment_date == current_date and appointment_time < current_time):
+            QtWidgets.QMessageBox.warning(self, "Invalid Date/Time",
+                                          "The appointment date and time cannot be in the past. Please select a valid date and time.")
+            return
 
         if doctor and illness and appointment_date and appointment_time:
             db_config = {
@@ -100,23 +105,21 @@ class AppointmentDialog(QtWidgets.QDialog):
                 connection = pymysql.connect(**db_config)
                 cursor = connection.cursor()
 
-
                 cursor.execute("SELECT clinic_ID FROM clinics WHERE clinic_name = %s", (self.clinic_name,))
                 clinic_id = cursor.fetchone()[0]
-
 
                 query = """
                 INSERT INTO appointments (doctor_ID, clinic_ID, illness, appointment_date, appointment_time) 
                 VALUES (%s, %s, %s, %s, %s)
                 """
-                cursor.execute(query, (doctor_id, clinic_id, illness, appointment_date, appointment_time))
+                cursor.execute(query, (doctor_id, clinic_id, illness, appointment_date.toString(QtCore.Qt.ISODate), appointment_time.toString(QtCore.Qt.ISODate)))
                 connection.commit()
 
                 QtWidgets.QMessageBox.information(self, "Request Submitted",
                                                   f"Doctor {doctor} has been requested at {self.clinic_name}.\n"
                                                   f"Illness: {illness}\n"
-                                                  f"Date: {appointment_date}\n"
-                                                  f"Time: {appointment_time}")
+                                                  f"Date: {appointment_date.toString(QtCore.Qt.ISODate)}\n"
+                                                  f"Time: {appointment_time.toString(QtCore.Qt.ISODate)}")
                 self.accept()
 
             except pymysql.MySQLError as e:
